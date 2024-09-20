@@ -16,7 +16,7 @@ async function sendDiscordDirectMessage(
   env: Env,
   userId: string,
   message: string
-) {
+): Promise<void> {
   const rest = createRESTClient(env);
   try {
     // Create a DM channel
@@ -31,6 +31,7 @@ async function sendDiscordDirectMessage(
     console.log("Direct message sent successfully");
   } catch (error) {
     console.error("Error sending direct message:", error);
+    throw error;
   }
 }
 
@@ -40,8 +41,19 @@ async function scheduledMessage(env: Env) {
 }
 
 app.get("/send-message", async (c) => {
-  await scheduledMessage(c.env);
-  return c.text("Scheduled message sent!");
+  const apiKey = c.req.header("API-Key");
+
+  if (c.env.NODE_ENV === "production" && apiKey !== c.env.API_KEY) {
+    return c.text("FORBIDDEN", 403);
+  }
+
+  try {
+    await scheduledMessage(c.env);
+    return c.text("Scheduled message sent successfully!");
+  } catch (error) {
+    console.error("Error in scheduled message:", error);
+    return c.text("Failed to send scheduled message", 500);
+  }
 });
 
 export default {
