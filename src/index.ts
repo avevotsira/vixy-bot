@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import { REST } from "@discordjs/rest";
-import { Routes } from "discord-api-types/v9";
+import {
+  type RESTPostAPICurrentUserCreateDMChannelResult,
+  Routes,
+} from "discord-api-types/v9";
 import type { Env } from "../bindings";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -9,22 +12,31 @@ function createRESTClient(env: Env) {
   return new REST({ version: "9" }).setToken(env.DISCORD_BOT_TOKEN);
 }
 
-async function sendDiscordMessage(env: Env, message: string) {
+async function sendDiscordDirectMessage(
+  env: Env,
+  userId: string,
+  message: string
+) {
   const rest = createRESTClient(env);
   try {
-    await rest.post(Routes.channelMessages(env.DISCORD_CHANNEL_ID), {
+    // Create a DM channel
+    const dmChannel = (await rest.post(Routes.userChannels(), {
+      body: { recipient_id: userId },
+    })) as RESTPostAPICurrentUserCreateDMChannelResult;
+
+    // Send the message to the DM channel
+    await rest.post(Routes.channelMessages(dmChannel.id), {
       body: { content: message },
     });
-    console.log("Message sent successfully");
+    console.log("Direct message sent successfully");
   } catch (error) {
-    console.error("Error sending message:", error);
+    console.error("Error sending direct message:", error);
   }
 }
 
 async function scheduledMessage(env: Env) {
- 
-  const message = `<@${env.TARGET_USER_ID}> VIXY IT TIME TO EAT`;
-  await sendDiscordMessage(env, message);
+  const message = "VIXY IT TIME TO EAT";
+  await sendDiscordDirectMessage(env, env.TARGET_USER_ID, message);
 }
 
 app.get("/send-message", async (c) => {
