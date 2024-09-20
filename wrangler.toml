@@ -5,8 +5,3 @@ compatibility_flags = [ "nodejs_compat" ]
 
 [triggers]
 crons = ["0 16 * * *", "0 21 * * *", "0 2 * * *"]
-
-[vars]
-DISCORD_BOT_TOKEN = ""
-DISCORD_CHANNEL_ID = ""
-TARGET_USER_ID=""
